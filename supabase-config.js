@@ -1,0 +1,1 @@
+window.TAESAN_SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_sb_publishable_KEY_HERE";
