@@ -20,7 +20,7 @@
 .videoPlayer{display:block;width:100%;max-height:480px;border-radius:13px;background:#16121e;margin-top:12px}.videoPreview{display:grid;gap:8px;margin:10px 0}.videoPreviewItem{display:flex;gap:8px;align-items:center;justify-content:space-between;background:#f7f2fa;border-radius:10px;padding:9px;overflow-wrap:anywhere}.videoPreviewItem span{flex:1;min-width:0;overflow-wrap:anywhere}
 
 .videoCoverLink{display:block;position:relative;max-width:520px;margin-top:12px;border-radius:14px;overflow:hidden;background:#f3eefa;text-decoration:none;color:#fff}.videoCoverLink img{display:block;width:100%;max-height:320px;object-fit:cover}.videoCoverLink .playMark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:#49385ab8;color:white;padding:13px 18px;font-size:25px}.videoCoverLink .videoCaption{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(transparent,#352b4fba);color:white;font-size:12px}.wallVideo{position:relative;display:block}.wallVideo:after{content:'▶';position:absolute;right:7px;bottom:7px;background:#56426bba;color:white;border-radius:30px;padding:5px 9px;font-size:14px}.wallVideo img{display:block}
-.music-track{display:flex;gap:14px;align-items:flex-start}.music-cover{width:92px;height:92px;flex:0 0 92px;object-fit:cover;border-radius:12px;border:1px solid #e9dfea;background:#f4eff8}.music-cover-placeholder{width:92px;height:92px;flex:0 0 92px;border-radius:12px;background:#eee8f6;display:flex;align-items:center;justify-content:center;font-size:28px;color:#8b819b}.music-info{min-width:0;flex:1}.music-info h3{margin-top:0;overflow-wrap:anywhere}@media(max-width:420px){.music-cover,.music-cover-placeholder{width:76px;height:76px;flex-basis:76px}.music-track{gap:10px}}
+.music-track{display:flex;gap:14px;align-items:flex-start}.music-cover{width:92px;height:92px;flex:0 0 92px;object-fit:cover;border-radius:12px;border:1px solid #e9dfea;background:#f4eff8}.music-cover-placeholder{width:92px;height:92px;flex:0 0 92px;border-radius:12px;background:#eee8f6;display:flex;align-items:center;justify-content:center;font-size:28px;color:#8b819b}.music-cover-box{width:92px;flex:0 0 92px}.music-cover-box .music-cover-placeholder{font-size:12px;text-align:center;box-sizing:border-box;padding:8px}.music-cover-status{font-size:11px;color:#8b4560;overflow-wrap:anywhere}.music-cover-original{display:block;font-size:11px;margin-top:5px}.music-cover-original[hidden]{display:none}.music-info{min-width:0;flex:1}.music-info h3{margin-top:0;overflow-wrap:anywhere}@media(max-width:420px){.music-cover,.music-cover-placeholder{width:76px;height:76px;flex-basis:76px}.music-track{gap:10px}.music-cover-box{width:76px;flex-basis:76px}}
 </style><script src="./supabase-config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script></head><body><main class="wrap"><header class="head"><div><div class="brand">TAESAN DAILY ♡ 🐈‍⬛</div><div class="tiny">태산의 하루 · 每一天的营业档案</div></div><button id="manageBtn">✎ 录入管理</button></header><section class="hero"><div class="tiny">OUR LITTLE ARCHIVE · SINCE 2026</div><h1>今天的泰山，留下了什么呢？</h1><div>每日营业 · 月度合集 · 年度回顾</div><img class="hero-cat" src="./assets/sleepy-cat.png" alt="戴着睡帽、在云朵上睡觉的小猫"></section><nav class="tabs" id="tabs"><button data-tab="daily" class="active">🐾 每日营业</button><button data-tab="monthly">🗓 月度合集</button><button data-tab="dm">💌 东东来信</button><button data-tab="photos">📷 照片墙</button><button data-tab="music">🎧 音乐推荐</button><button data-tab="yearly">✨ 年度统计</button><button data-tab="manage">✎ 管理</button></nav>
 <section id="daily"><div class="panel"><div class="toolbar"><label>日期 <input id="dayPicker" type="date"></label><label>平台 <select id="dayPlatform"></select></label></div><div class="stats" id="dayStats"></div></div><div class="row"><section class="panel"><h2>🐈‍⬛ 营业日历</h2><div class="toolbar"><button id="prevMonth">‹</button><strong id="calMonth"></strong><button id="nextMonth">›</button></div><div class="calendar" id="calendar"></div></section><section class="panel"><h2>今日营业时间线</h2><div id="dailyList"></div></section></div></section>
 <section id="monthly" class="hidden"><div class="panel"><div class="toolbar"><label>选择月份 <input id="monthPicker" type="month"></label><label>平台 <select id="monthPlatform"></select></label></div><h2 id="monthTitle"></h2><div class="stats" id="monthStats"></div></div><section class="panel"><h2>营业合集 · 按日期</h2><div id="monthList"></div></section></section>
@@ -121,7 +121,60 @@ $('exportBtn').onclick=()=>{let data={version:3,entries:entries(),dm:dms()},blob
 $('importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{requireAdmin();let d=JSON.parse(await f.text());if(!Array.isArray(d.entries)||!Array.isArray(d.dm))throw Error('文件不是 data.json 格式');if(!confirm(`准备导入 ${d.entries.length} 条营业记录、${d.dm.length} 天 DM 数量。相同 ID 会更新，确认吗？`))return;let batch=async(table,arr)=>{for(let i=0;i<arr.length;i+=100){let {error}=await client.from(table).upsert(arr.slice(i,i+100),{onConflict:table==='entries'?'id':'date'});if(error)throw error}};let cleanEntry=x=>({id:String(x.id),date:x.date,time:x.time||'',platform:x.platform,kind:x.kind||'其他',title:x.title||'未命名',summary:x.summary||'',official:x.official||'',weibo:x.weibo||'',photo:x.photo||'',photos:Array.isArray(x.photos)?x.photos:(x.photo?[x.photo]:[]),videos:Array.isArray(x.videos)?x.videos:[],photo_count:Number(x.photo_count)||0,video_count:Number(x.video_count)||0});await batch('entries',d.entries.filter(x=>x.id&&x.date&&x.platform).map(cleanEntry));await batch('dm_stats',d.dm.filter(x=>x.date).map(x=>({date:x.date,text:+x.text||0,voice:+x.voice||0,photos:+x.photos||0,videos:+x.videos||0})));await refreshCloud();alert('云端导入完成，请检查月度合集')}catch(err){alert('导入失败：'+err.message)}finally{e.target.value=''}};
 
 function safeMusicLink(v){try{let u=new URL(v);return u.protocol==='https:'?u.href:''}catch{return ''}}
-function renderMusic(){const box=$('musicList');box.replaceChildren();let q=($('musicSearch').value||'').trim().toLowerCase();let a=musicRows.filter(x=>(x.title+' '+x.artist+' '+x.album).toLowerCase().includes(q));$('musicTotal').textContent=`${a.length} / ${musicRows.length} 首`;if(!a.length){box.append(make('p','暂无匹配歌曲。','tiny'));return}a.forEach(x=>{let row=make('article',undefined,'record music-track');let cover=safeMusicLink(x.cover_url);if(cover){let img=document.createElement('img');img.className='music-cover';img.src=cover;img.alt=(x.album||x.title)+' 专辑封面';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{let placeholder=make('div','♫','music-cover-placeholder');img.replaceWith(placeholder)};row.append(img)}else{row.append(make('div','♫','music-cover-placeholder'))}let info=make('div',undefined,'music-info');info.append(make('h3',x.title+' · '+x.artist));if(x.album)info.append(make('div','专辑：'+x.album,'tiny'));info.append(make('div',x.recommended_date?`推荐日期：${x.recommended_date}`:'推荐日期待补充','tiny'));if(!x.source_url)info.append(make('div','原帖来源待补充','tiny'));let links=make('div',undefined,'links');let qq=safeMusicLink(x.qq_url);if(qq&&/^https:\/\/(?:y\.qq\.com|c\.y\.qq\.com|c6\.y\.qq\.com)\//i.test(qq))link(links,'🎵 QQ 音乐',qq);link(links,'🎧 Spotify',safeMusicLink(x.spotify_url));link(links,'↗ 推荐原帖',safeMusicLink(x.source_url));info.append(links);if(x.notes)info.append(make('p',x.notes));row.append(info);box.append(row)})}
+let musicCoverFallbacks=new Map();
+let musicCoverFallbackError='';
+const musicCoverKey=x=>JSON.stringify([x.title,x.artist]);
+async function loadMusicCoverFallbacks(){
+ try{
+  const response=await fetch('./album-cover-data.json',{cache:'no-cache'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const rows=await response.json();
+  if(!Array.isArray(rows))throw Error('封面数据格式异常');
+  musicCoverFallbacks=new Map(rows.filter(x=>x.selected===true&&safeMusicLink(x.cover_url)).map(x=>[musicCoverKey(x),x.cover_url]));
+  musicCoverFallbackError='';
+ }catch(e){musicCoverFallbackError='备用封面数据加载失败：'+e.message}
+}
+function musicCover(row){
+ // Preserve database artwork; use previous approved selections only for empty fields.
+ const raw=typeof row.cover_url==='string'?row.cover_url.trim():'';
+ return raw?safeMusicLink(raw):safeMusicLink(musicCoverFallbacks.get(musicCoverKey(row)));
+}
+function musicCoverElement(x){
+ const box=make('div',undefined,'music-cover-box');
+ const cover=musicCover(x);
+ if(!cover){
+  box.append(make('div',x.cover_url?'封面地址无效':'暂无封面','music-cover-placeholder'));
+  return box;
+ }
+ const img=make('img');img.className='music-cover';img.alt=(x.album||x.title)+' 专辑封面';
+ img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+ const message=make('div','封面加载中…','music-cover-status');
+ const retry=make('button','重试','smallbtn');retry.type='button';retry.hidden=true;
+ const original=make('a','打开封面原图','music-cover-original');original.href=cover;original.target='_blank';original.rel='noopener noreferrer';original.hidden=true;
+ img.onload=()=>{message.textContent='';retry.hidden=true;original.hidden=true;img.hidden=false};
+ img.onerror=()=>{img.hidden=true;message.textContent='封面加载失败，请重试或打开原图';retry.hidden=false;original.hidden=false};
+ retry.onclick=()=>{message.textContent='正在重试封面…';retry.hidden=true;original.hidden=true;img.hidden=false;img.removeAttribute('src');img.src=cover};
+ img.src=cover;box.append(img,message,retry,original);return box;
+}
+function renderMusic(){
+ const box=$('musicList');box.replaceChildren();
+ let q=($('musicSearch').value||'').trim().toLowerCase();
+ let a=musicRows.filter(x=>(x.title+' '+x.artist+' '+x.album).toLowerCase().includes(q));
+ const missing=a.filter(x=>!musicCover(x)).length;
+ $('musicTotal').textContent=`${a.length} / ${musicRows.length} 首 · ${missing} 首暂无可用封面`+(musicCoverFallbackError?' · '+musicCoverFallbackError:'');
+ if(!a.length){box.append(make('p','暂无匹配歌曲。','tiny'));return}
+ a.forEach(x=>{
+  let row=make('article',undefined,'record music-track');row.append(musicCoverElement(x));
+  let info=make('div',undefined,'music-info');info.append(make('h3',x.title+' · '+x.artist));
+  if(x.album)info.append(make('div','专辑：'+x.album,'tiny'));
+  info.append(make('div',x.recommended_date?`推荐日期：${x.recommended_date}`:'推荐日期待补充','tiny'));
+  if(!x.source_url)info.append(make('div','原帖来源待补充','tiny'));
+  let links=make('div',undefined,'links');let qq=safeMusicLink(x.qq_url);
+  if(qq&&/^https:\/\/(?:y\.qq\.com|c\.y\.qq\.com|c6\.y\.qq\.com)\//i.test(qq))link(links,'🎵 QQ 音乐',qq);
+  link(links,'🎧 Spotify',safeMusicLink(x.spotify_url));link(links,'↗ 推荐原帖',safeMusicLink(x.source_url));
+  info.append(links);if(x.notes)info.append(make('p',x.notes));row.append(info);box.append(row);
+ })
+}
 function renderMusicManage(){let box=$('musicManageList');box.replaceChildren();if(!admin)return;$('musicManageStatus').textContent=`共 ${musicRows.length} 首，可编辑、删除或新增`;musicRows.forEach(x=>{let row=make('div',x.title+' · '+x.artist,'record');let edit=make('button','编辑','smallbtn');edit.onclick=()=>{editingMusicId=x.id;let fields={musicTitle:'title',musicArtist:'artist',musicAlbum:'album',musicCover:'cover_url',musicQQ:'qq_url',musicSpotify:'spotify_url',musicDate:'recommended_date',musicPlatform:'source_platform',musicSource:'source_url',musicNotes:'notes'};Object.entries(fields).forEach(([id,key])=>$(id).value=x[key]||'');$('musicCoverFile').value='';updateMusicCoverPreview();$('musicCoverUploadStatus').textContent='可从相册选择新封面上传';$('musicForm').scrollIntoView({behavior:'smooth'})};let del=make('button','删除','smallbtn');del.onclick=async()=>{if(!confirm(`确定删除 ${x.title}？`))return;try{requireAdmin();let {error}=await client.from('music_tracks').delete().eq('id',x.id);if(error)throw error;await refreshMusic()}catch(e){alert('删除失败：'+e.message)}};row.append(' ',edit,del);box.append(row)})}
 function resetMusicForm(){editingMusicId=null;$('musicForm').reset();$('musicCoverFile').value='';$('musicCoverUploadStatus').textContent='选择 JPG、PNG 或 WebP，单张不超过 5 MB；iPhone HEIC 请先转成 JPG。';updateMusicCoverPreview()}
 function updateMusicCoverPreview(){const url=safeMusicLink($('musicCover').value.trim()),img=$('musicCoverPreview');if(url){img.src=url;img.classList.remove('hidden')}else{img.removeAttribute('src');img.classList.add('hidden')}}
@@ -145,7 +198,17 @@ $('musicCoverUpload').onclick=async()=>{
 $('musicCancel').onclick=resetMusicForm;
 $('musicSearch').oninput=renderMusic;
 $('musicForm').onsubmit=async e=>{e.preventDefault();let btn=$('musicSave');btn.disabled=true;try{requireAdmin();let qq=safeMusicLink($('musicQQ').value.trim()),spotify=safeMusicLink($('musicSpotify').value.trim());if(!qq&&!spotify)throw Error('请至少填写一个有效的 HTTPS 播放链接');let id=editingMusicId||((crypto.randomUUID&&crypto.randomUUID())||'song-'+Date.now());let x={id,title:$('musicTitle').value.trim(),artist:$('musicArtist').value.trim(),album:$('musicAlbum').value.trim(),cover_url:safeMusicLink($('musicCover').value.trim()),qq_url:qq,spotify_url:spotify,recommended_date:$('musicDate').value||null,source_platform:$('musicPlatform').value.trim(),source_url:safeMusicLink($('musicSource').value.trim()),notes:$('musicNotes').value.trim()};let {error}=await client.from('music_tracks').upsert(x,{onConflict:'id'});if(error)throw error;resetMusicForm();await refreshMusic();alert('歌曲已保存 ♡')}catch(e){alert('保存失败：'+e.message)}finally{btn.disabled=false}};
-async function refreshMusic(){if(!client)return;try{let all=[];for(let from=0;from<20000;from+=1000){let {data,error}=await client.from('music_tracks').select('*').order('title',{ascending:true}).range(from,from+999);if(error)throw error;all.push(...data);if(data.length<1000)break}musicRows=all;renderMusic();renderMusicManage()}catch(e){$('musicTotal').textContent='音乐数据尚未连接：'+e.message}}
+async function refreshMusic(){if(!client)return;try{
+ await loadMusicCoverFallbacks();
+ let all=[],pageSize=50;
+ // Small explicit pages also work when PostgREST's server row cap is below 1000.
+ for(let from=0;;from+=pageSize){
+  let {data,error}=await client.from('music_tracks').select('*').order('title',{ascending:true}).order('id',{ascending:true}).range(from,from+pageSize-1);
+  if(error)throw error;if(!Array.isArray(data))throw Error('音乐数据格式异常');
+  all.push(...data);if(data.length===0)break;
+ }
+ musicRows=all;renderMusic();renderMusicManage();
+ }catch(e){$('musicTotal').textContent='音乐数据尚未连接：'+e.message}}
 
 async function refreshCloud(){if(!client)return;let readAll=async(table,order)=>{let all=[];for(let from=0;from<20000;from+=1000){let {data,error}=await client.from(table).select('*').order(order,{ascending:true}).range(from,from+999);if(error)throw error;all.push(...data);if(data.length<1000)break}return all};try{let [a,b]=await Promise.all([readAll('entries','date'),readAll('dm_stats','date')]);cloud.entries=a;cloud.dm=b;render();await refreshMusic();status(`☁️ 云端连接正常 · ${a.length} 条记录 · ${b.length} 天 DM 统计`)}catch(e){status('云端读取失败：'+e.message+'。请勿在此状态下导入或保存。')}}
 async function syncAuth(){if(!client)return;let {data:{user},error}=await client.auth.getUser();admin=!!user&&!error&&user.id===ADMIN_UID;document.body.classList.toggle('admin-on',admin);$('loginBox').classList.toggle('hidden',admin);$('adminWho').textContent=admin?'已登录：'+(user.email||'管理员'):'';if(user&&!admin)status('此账号不是指定管理员，只能浏览。');renderManage();renderMusicManage()}
