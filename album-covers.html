@@ -1,66 +1,36 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TAESAN DAILY · 115 首专辑封面批量匹配</title><style>body{font:15px system-ui,-apple-system,sans-serif;background:#faf6fc;color:#514664;margin:0}.wrap{max-width:900px;margin:auto;padding:22px 15px}h1{font-size:23px}.note{background:#eee8f6;padding:14px;border-radius:13px;line-height:1.7}.actions{position:sticky;top:0;background:#faf6fcee;padding:12px 0;display:flex;gap:8px;flex-wrap:wrap;z-index:5}button{border:0;background:#8d78b5;color:white;border-radius:9px;padding:11px 13px;font-size:14px}button:disabled{opacity:.45}.song{display:flex;gap:12px;border-bottom:1px solid #e6ddec;padding:12px 0;align-items:center}.song img{width:70px;height:70px;object-fit:cover;background:#eee;border-radius:8px}.info{flex:1;min-width:0}.info strong{display:block;overflow-wrap:anywhere}.info small{display:block;color:#877d91;margin:4px 0}.info a{font-size:12px;color:#7660a2}.tag{font-size:12px;padding:3px 7px;border-radius:8px;background:#e8e2f0;display:inline-block;margin-top:4px}.ok{background:#d9f0e0}.warn{background:#ffe6c9}.skip{background:#f1e3e7}.song input{width:19px;height:19px}.sub{color:#857b91;font-size:12px}#status{margin:10px 0;font-weight:600}textarea{width:100%;height:160px;box-sizing:border-box}details{margin:16px 0}</style></head><body><div class="wrap"><h1>🎧 TAESAN DAILY · 专辑封面批量匹配</h1><div class="note">已录入 115 首歌。点击「自动查找封面」，会通过 Apple Music/iTunes 多地区曲库检索真实发行封面。<b>只有歌名、歌手都匹配得比较确定的才会默认勾选</b>；不确定的不会自动写入数据库。你可以先检查图片，再生成 SQL。整个工具不需要登录，也不会直接修改你的 Supabase 数据。</div><div class="actions"><button id="go">① 自动查找封面</button><button id="sql" disabled>② 生成更新 SQL</button><button id="csv" disabled>导出核对表 CSV</button></div><div id="status">等待开始 · 共 115 首（修复版：显示进度，支持多地区检索及错误诊断）</div><div class="sub">封面来自第三方曲库，可能出现地区差异、重制版、精选辑或不同发行版本。匹配结果需要核对，尤其是同名歌曲。</div><div id="list"></div><details><summary>生成的 SQL（也可复制）</summary><textarea id="output" readonly></textarea><button id="copy">复制 SQL</button></details></div><script>
-const songs=[{"title": "(Marie's The Name) His Latest Flame", "artist": "Elvis Presley"}, {"title": "2016", "artist": "d4vd"}, {"title": "5 am", "artist": "Zaeden"}, {"title": "All Day", "artist": "ONEW"}, {"title": "All My Love - Remaster", "artist": "Led Zeppelin"}, {"title": "Altogether Alone", "artist": "Be The Voice"}, {"title": "Always with Me", "artist": "Yumi Kimura"}, {"title": "Backstreet Girl", "artist": "d4vd"}, {"title": "Biutyful", "artist": "Coldplay"}, {"title": "BYE", "artist": "Jaden"}, {"title": "Call Me", "artist": "Spagna"}, {"title": "Can't Help Falling in Love", "artist": "Elvis Presley"}, {"title": "Catching Feelings", "artist": "Justin Bieber"}, {"title": "Cocktail Love", "artist": "Maronnier"}, {"title": "Count of three (You can eat $#@!)", "artist": "underscores"}, {"title": "DAN DAN 心魅かれてく", "artist": "ZARD"}, {"title": "Dear Marie", "artist": "Loving Caliber"}, {"title": "Dirty AF1s", "artist": "Alexander 23"}, {"title": "Don't Fade Away", "artist": "Beach Fossils"}, {"title": "Don't Forget About Me", "artist": "d4vd"}, {"title": "Don't Go Breaking My Heart", "artist": "Backstreet Boys"}, {"title": "Don't Look Back In Anger", "artist": "Oasis"}, {"title": "DREAMING", "artist": "FreeTEMPO;宮原永海"}, {"title": "Driver's High - Remastered 2022", "artist": "彩虹"}, {"title": "drunk text", "artist": "Henry Moodie"}, {"title": "Episode", "artist": "LEE MU JIN"}, {"title": "FEELS LIKE DEATH", "artist": "gyun"}, {"title": "Freakie", "artist": "Jae Stephens"}, {"title": "Goodbye To Love", "artist": "Carpenters"}, {"title": "Haikei Shounenyo", "artist": "Hump Back"}, {"title": "Hailey", "artist": "Justin Bieber"}, {"title": "Heal the World", "artist": "Michael Jackson"}, {"title": "Here to Stay", "artist": "Jason LaPierre;Anthony Lazaro"}, {"title": "Here With Me", "artist": "d4vd"}, {"title": "HOLIDAY", "artist": "Turnstile"}, {"title": "Holidays in Rome", "artist": "Animarea"}, {"title": "HONEY", "artist": "彩虹"}, {"title": "Hotel", "artist": "Claire Rosinkranz"}, {"title": "How Deep Is Your Love", "artist": "Bee Gees"}, {"title": "Humming (Feat. CHE)", "artist": "Dvwn;CHE"}, {"title": "I Feel Foolish", "artist": "Caity Gyorgy;Daniel Barta"}, {"title": "I Just Called To Say I Love You", "artist": "Stevie Wonder"}, {"title": "INEEDYOURLOVE", "artist": "Loco"}, {"title": "Just Say Hello", "artist": "Melo-D"}, {"title": "KEEP IT UP", "artist": "Rex Orange County"}, {"title": "Kiss the Ladder", "artist": "Fleshwater"}, {"title": "Let There Be Love", "artist": "Oasis"}, {"title": "like my father", "artist": "Jax"}, {"title": "Like the Birds", "artist": "Byun Jin-Sub"}, {"title": "Loner", "artist": "YUNGBLUD"}, {"title": "loser", "artist": "Zac Greer"}, {"title": "LOVE ～眠れずに君の横顔ずっと見ていた～", "artist": "ZARD"}, {"title": "Lucky", "artist": "Britney Spears"}, {"title": "Memories", "artist": "Conan Gray"}, {"title": "missin u", "artist": "Tori Kelly"}, {"title": "Misunderstood", "artist": "Liam Gallagher"}, {"title": "My You", "artist": "Hump Back"}, {"title": "No Promises", "artist": "Shayne Ward"}, {"title": "Noir", "artist": "Yelle"}, {"title": "NoNoNo", "artist": "Apink"}, {"title": "Reality", "artist": "Vladimir Cosma;Richard Sanderson"}, {"title": "RGB", "artist": "CAPSULE"}, {"title": "Right Here Waiting", "artist": "Richard Marx"}, {"title": "Rising Force", "artist": "Yngwie Malmsteen"}, {"title": "Romantic Homicide", "artist": "d4vd"}, {"title": "Room Of Fools", "artist": "FKA twigs"}, {"title": "SHYNESS BOY", "artist": "杏里"}, {"title": "Simple Man", "artist": "Lynyrd Skynyrd"}, {"title": "Sleep Well", "artist": "d4vd"}, {"title": "Slow Motion", "artist": "Charlotte Lawrence"}, {"title": "Smoking Dreams", "artist": "Jazzyfact"}, {"title": "SNAKE EYES", "artist": "Aries"}, {"title": "Sorry, I Hate You (feat. B.I)", "artist": "Sik-K;B.I"}, {"title": "Spirit 2.0", "artist": "Sampha"}, {"title": "Stick Season", "artist": "Noah Kahan"}, {"title": "Sundown", "artist": "Nic D;Vwillz"}, {"title": "SWEET LOVE", "artist": "Stephen Sanchez"}, {"title": "Tender Surrender", "artist": "Steve Vai"}, {"title": "Thank God I Found You (feat. Joe & 98°)", "artist": "Mariah Carey;Joe;98º"}, {"title": "That's Life", "artist": "Frank Sinatra"}, {"title": "The Bridge", "artist": "d4vd"}, {"title": "The Glass", "artist": "H.E.R.;Foo Fighters"}, {"title": "This Is How It Feels (with Laufey)", "artist": "d4vd;Laufey"}, {"title": "Tic Tac Toe", "artist": "ONEW;ZICO"}, {"title": "TNT", "artist": "aupinard"}, {"title": "Today is another day", "artist": "ZARD"}, {"title": "Together Forever", "artist": "Rick Astley"}, {"title": "Top Of The World", "artist": "Carpenters"}, {"title": "TOUGH LOVE", "artist": "ONEW"}, {"title": "Welcome to the Black Parade", "artist": "My Chemical Romance"}, {"title": "Western Union Desperate", "artist": "Mary Lou Lord"}, {"title": "What the Hell", "artist": "Avril Lavigne"}, {"title": "Why Does It Always Rain On Me?", "artist": "Travis"}, {"title": "WORTHLESS", "artist": "d4vd"}, {"title": "Yamaha", "artist": "Dijon"}, {"title": "You and I", "artist": "d4vd"}, {"title": "Young Man", "artist": "HYUKOH;落日飛車 Sunset Rollercoaster"}, {"title": "내 입술... 따뜻한 커피처럼", "artist": "샵"}, {"title": "サヨナラは今もこの胸に居ます", "artist": "ZARD"}, {"title": "マイ フレンド", "artist": "ZARD"}, {"title": "もう少しだけ", "artist": "YOASOBI"}, {"title": "レイニー ブルー", "artist": "德永英明"}, {"title": "今日も", "artist": "ZARD"}, {"title": "君がいたから", "artist": "ZARD"}, {"title": "夜に駆ける", "artist": "YOASOBI"}, {"title": "心を開いて", "artist": "ZARD"}, {"title": "愛が見えない", "artist": "ZARD"}, {"title": "愛你但說不出口", "artist": "Karencici"}, {"title": "有点甜", "artist": "汪蘇瀧;BY2"}, {"title": "桜色舞うころ (acoustic)", "artist": "中島美嘉"}, {"title": "白日", "artist": "King Gnu"}, {"title": "眠り", "artist": "ZARD"}, {"title": "瞳をとじて", "artist": "平井堅"}, {"title": "突然", "artist": "ZARD"}, {"title": "見つめていたいね", "artist": "ZARD"}];
-const $=id=>document.getElementById(id);
-const norm=s=>(s||'').normalize('NFKC').toLowerCase().replace(/\([^)]*\)|\[[^\]]*\]/g,' ').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
-const token=s=>new Set(norm(s).split(/\s+/).filter(Boolean));
-const similarity=(a,b)=>{a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;if(a.includes(b)||b.includes(a))return .85;let aa=token(a),bb=token(b);return [...aa].filter(x=>bb.has(x)).length/Math.max(aa.size,bb.size,1)};
-function artistScore(expected,actual){let parts=expected.split(';').map(s=>s.trim()).filter(Boolean);return Math.max(...parts.map(p=>similarity(p,actual)),0)}
-async function search(song){
-  const terms=[song.title+' '+song.artist.split(';')[0],song.title];
-  const countries=['KR','JP','US','TW'];
-  let errors=[];
-  for(const term of terms){
-    for(const country of countries){
-      const url='https://itunes.apple.com/search?'+new URLSearchParams({term,entity:'song',limit:'50',country});
-      try{
-        const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),12000);
-        let response;
-        try{response=await fetch(url,{signal:ctrl.signal,mode:'cors',cache:'no-store'});}finally{clearTimeout(timer)}
-        if(!response.ok)throw Error('HTTP '+response.status);
-        const data=await response.json();
-        if(!Array.isArray(data.results))throw Error('响应格式异常');
-        const best=choose(song,data.results);
-        if(best&&best.t>=.75&&best.a>=.65)return data.results;
-        if(best&&best.t>=.55)return data.results;
-      }catch(e){errors.push(country+': '+(e.name==='AbortError'?'请求超时':e.message));}
-    }
-  }
-  if(errors.length===terms.length*countries.length)throw Error(errors[0]+'（全部地区无法连接）');
-  return [];
-}
-function choose(song,results){let ranked=results.filter(x=>x.artworkUrl100).map(x=>{let t=similarity(song.title,x.trackName),a=artistScore(song.artist,x.artistName),score=t*.65+a*.35;return {x,t,a,score}}).sort((a,b)=>b.score-a.score);let best=ranked[0];if(!best)return null;let confident=best.t>=.85&&best.a>=.75;return {...best,confident,runner:ranked[1]?.score||0}}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function draw(){let root=$('list');root.innerHTML='';songs.forEach((song,i)=>{let d=document.createElement('div');d.className='song';let found=song.found;let img=found?.x.artworkUrl100||'';let artwork=img.replace(/\d+x\d+bb\./,'600x600bb.');song.artwork=artwork;let checked=!!(found?.confident&&artwork);if(song.userChecked!==undefined)checked=song.userChecked;let status=!found?'未匹配':found.confident?'较高置信度':'需人工核对';d.innerHTML=`<img src="${esc(img)}" alt=""><div class="info"><strong>${i+1}. ${esc(song.title)}</strong><small>${esc(song.artist)}</small><span class="tag ${!found?'skip':found.confident?'ok':'warn'}">${status}</span>${found?`<small>匹配：${esc(found.x.trackName)} · ${esc(found.x.artistName)} · ${esc(found.x.collectionName||'')}</small><a href="${esc(found.x.trackViewUrl||found.x.collectionViewUrl||'#')}" target="_blank" rel="noopener">查看曲库条目</a>`:''}</div><input type="checkbox" aria-label="选择这首封面" ${checked?'checked':''} ${!artwork?'disabled':''}>`;d.querySelector('input').onchange=e=>{song.userChecked=e.target.checked;count()};root.append(d)})}
-function count(){let n=songs.filter(s=>s.artwork&&(s.userChecked??s.found?.confident)).length,found=songs.filter(s=>s.found).length;$('status').textContent=`已找到 ${found}/115 首候选封面 · 已勾选 ${n} 首可更新`;}
-$('go').onclick=async()=>{
-  $('go').disabled=true;
-  $('sql').disabled=true;
-  $('csv').disabled=true;
-  let done=0,found=0,failed=0,next=0,firstError='';
-  $('status').textContent='已开始查找，正在连接 Apple Music 曲库… 0/115';
-  await new Promise(r=>setTimeout(r,30));
-  async function worker(){
-    while(next<songs.length){
-      const i=next++,song=songs[i];
-      try{
-        const results=await search(song);
-        song.found=choose(song,results);
-        if(song.found)found++;
-      }catch(e){song.error=e.message;failed++;if(!firstError)firstError=e.message}
-      done++;
-      $('status').textContent=`正在查找 ${done}/${songs.length} · 找到 ${found} 首 · 请求失败 ${failed} 首`;
-      if(done%5===0||done===songs.length)draw();
-    }
-  }
-  try{await Promise.all(Array.from({length:2},()=>worker()));draw();count();
-    if(failed) $('status').textContent+=` · ${failed} 首连接失败。错误示例：${firstError}`;
-  }finally{$('sql').disabled=false;$('csv').disabled=false;$('go').disabled=false;$('go').textContent='重新查找'}
-};
-function selected(){return songs.filter(s=>s.artwork&&(s.userChecked??s.found?.confident))}
-function quote(s){return "'"+String(s).replace(/'/g,"''")+"'"}
-function sql(){let a=selected();let head='-- TAESAN DAILY · 专辑封面更新（仅更新 cover_url，不影响其他字段）\n-- 仅更新 cover_url 为空的歌曲，已上传封面不会被覆盖\nBEGIN;\n';let body=a.map(s=>`UPDATE public.music_tracks SET cover_url = ${quote(s.artwork)} WHERE title = ${quote(s.title)} AND artist = ${quote(s.artist)} AND (cover_url IS NULL OR cover_url = '');`).join('\n');return head+body+'\nCOMMIT;\n'}
-$('sql').onclick=()=>{let result=sql();$('output').value=result;let blob=new Blob([result],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TAESAN_115_专辑封面批量更新.sql';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
-$('copy').onclick=async()=>{let value=$('output').value||sql();$('output').value=value;try{await navigator.clipboard.writeText(value);alert('已复制 SQL')}catch{ $('output').select();document.execCommand('copy');alert('已尝试复制 SQL')}};
-$('csv').onclick=()=>{let lines=[['title','artist','matched_title','matched_artist','album','cover_url','selected'].join(',')];let q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';songs.forEach(s=>{let x=s.found?.x||{};lines.push([s.title,s.artist,x.trackName,x.artistName,x.collectionName,s.artwork,s.artwork&&(s.userChecked??s.found?.confident)?'yes':'no'].map(q).join(','))});let blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TAESAN_115_专辑封面核对.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
-draw();
-</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TAESAN DAILY · 专辑封面核对</title>
+  <style>
+    body{font:15px system-ui,-apple-system,sans-serif;background:#faf6fc;color:#514664;margin:0}
+    .wrap{max-width:960px;margin:auto;padding:22px 15px}h1{font-size:23px}
+    .note{background:#eee8f6;padding:14px;border-radius:13px;line-height:1.7}
+    .actions{position:sticky;top:0;background:#faf6fcee;padding:12px 0;display:flex;gap:8px;flex-wrap:wrap;z-index:5}
+    button{border:0;background:#8d78b5;color:white;border-radius:9px;padding:11px 13px;font-size:14px;cursor:pointer}
+    button:disabled{opacity:.45;cursor:default}.song{display:flex;gap:12px;border-bottom:1px solid #e6ddec;padding:12px 0;align-items:center}
+    .song img{width:70px;height:70px;object-fit:cover;background:#eee;border-radius:8px}.info{flex:1;min-width:0}
+    .info strong{display:block;overflow-wrap:anywhere}.info small{display:block;color:#776d81;margin:4px 0;overflow-wrap:anywhere}
+    .info a{font-size:12px;color:#7660a2;margin-right:12px}.tag{font-size:12px;padding:3px 7px;border-radius:8px;background:#e8e2f0;display:inline-block;margin-top:4px}
+    .ok{background:#d9f0e0}.warn{background:#ffe6c9}.skip{background:#f1e3e7}.song input{width:19px;height:19px}
+    .sub{color:#776d81;font-size:12px}#status{margin:10px 0;font-weight:600}textarea{width:100%;height:180px;box-sizing:border-box}details{margin:16px 0}
+  </style>
+  <script src="./album-covers.js" defer></script>
+</head>
+<body><main class="wrap">
+  <h1>🎧 TAESAN DAILY · 专辑封面核对</h1>
+  <div class="note">已载入之前的 CSV 核对数据，保留已有封面与勾选状态。<b>自动查找只处理缺封面的歌曲</b>，参考 Spotify 专辑、歌手和发行版本；所有新增候选均需你核对后手动勾选。ISRC 和 Spotify 链接供逐项核对，Apple 搜索本身不能验证 ISRC。工具不登录、不直接写入 Supabase。</div>
+  <div class="actions">
+    <button id="go" disabled>① 仅查找缺失封面</button>
+    <button id="stop" disabled>停止查找</button>
+    <button id="sql" disabled>② 生成更新 SQL</button>
+    <button id="csv" disabled>导出核对 CSV</button>
+  </div>
+  <div id="status" role="status" aria-live="polite">正在读取已有核对数据…</div>
+  <p id="network" class="sub">连接失败不等于歌曲未收录。若出现网络、CORS、超时或限流错误，保留已有数据后停止，并在可访问音乐曲库的网络中重试。</p>
+  <div id="list"></div>
+  <details><summary>生成的 SQL（仅更新空封面）</summary><textarea id="output" aria-label="更新 SQL" readonly></textarea><button id="copy" disabled>复制 SQL</button></details>
+</main></body>
+</html>
