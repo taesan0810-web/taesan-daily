@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "a3c43e50-03b0-4940-a778-1c989987d9af",
+      "title": "请填写自己的档案标题",
+      "content_zh": "请替换为已核实的中文内容。",
+      "original_ko": "",
+      "translation_zh": "",
+      "category": "基本资料",
+      "tags": [
+        "示例"
+      ],
+      "life_stage": "未明确",
+      "public_date": null,
+      "source": "待填写",
+      "source_url": "",
+      "source_note": "这是格式示例，不是韩泰山个人信息。",
+      "images": [],
+      "published": false
+    }
+  ]
+}
