@@ -1,0 +1,3 @@
+ALTER TABLE public.music_works DROP CONSTRAINT music_works_check3, DROP CONSTRAINT music_works_check4;
+DROP POLICY music_media_public_read ON storage.objects;
+CREATE POLICY music_media_public_read ON storage.objects FOR SELECT TO anon,authenticated USING(bucket_id='music-media' AND EXISTS(SELECT 1 FROM public.music_works w WHERE w.published AND storage.objects.name IN (w.cover_path,w.audio_path,w.video_path)));
