@@ -10,3 +10,4 @@
 .mood .strip{filter:none;object-position:0% 0%}.mood .mini{object-position:35% 35%}.mood .note{font-size:21px;padding:7px 12px}
 @media(min-width:701px){.mood .strip{width:42%;height:82%}}
 @media(max-width:700px){.mood .note{font-size:15px;padding:5px 9px}}
+.archive-arrow{display:inline-block;width:1em;height:1em;flex-shrink:0;vertical-align:-.1em;background-color:currentColor;-webkit-mask:url('assets/arrow-up-right.svg') center/contain no-repeat;mask:url('assets/arrow-up-right.svg') center/contain no-repeat}
