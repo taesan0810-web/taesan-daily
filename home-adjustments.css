@@ -18,3 +18,8 @@
 @media(max-width:700px){.photo figcaption{display:none}.enter{font-size:10px}.quiet-note{max-width:100px}}
 .photo figcaption{display:none}
 @media(min-width:701px){.birthday{top:-2%}}
+.dear-note{font-size:21px;padding:7px 12px}
+@media(min-width:701px) and (max-width:1100px){.dear-note{font-size:18px}}
+@media(max-width:700px){.dear-note{font-size:15px;padding:5px 9px}}
+@media(max-height:740px) and (max-width:700px){.dear-note{font-size:14px}}
+.photo-person img{object-position:12% 0%}
