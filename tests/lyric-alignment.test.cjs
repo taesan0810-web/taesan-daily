@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),core=require('../lyric-alignment.js'),{diffChars}=require('../vendor/diff.js');
+const chunks=[{text:'Hello',timestamp:[1,2]},{text:'world',timestamp:[2,3]},{text:'다시',timestamp:[4,5]},{text:'만나',timestamp:[5,6]}];
+const rows=core.align('Hello world!\n다시 만나\nUnheard words',chunks,10,diffChars);
+assert.equal(rows[0].time,1);assert.equal(rows[1].time,4);assert.equal(rows[2].time,null);
+assert.throws(()=>core.toLrc(rows,10));rows[2].time=8;
+assert.equal(core.toLrc(rows,10),'[00:01.00]Hello world!\n[00:04.00]다시 만나\n[00:08.00]Unheard words');
+assert.throws(()=>core.toLrc([{time:4,text:'a'},{time:3,text:'b'}],10));
+for(const time of [null,NaN,Infinity,-1,11])assert.throws(()=>core.toLrc([{time,text:'a'}],10));
+assert.equal(core.stamp(59.999),'01:00.00');assert.equal(core.normalize('ＡＢＣ, 다시!'),'abc다시');
+assert.equal(core.align('missing',[],10,diffChars)[0].time,null);
+assert.equal(core.align('hello',[{text:'hello',timestamp:[null,2]}],10,diffChars)[0].time,null);
+assert.throws(()=>core.align('x'.repeat(15001),[],10,diffChars));
+console.log('PASS lyric matching, Korean/English, missing words, invalid/descending timestamps, centisecond rollover, size limits');
