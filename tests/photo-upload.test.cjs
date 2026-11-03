@@ -2,7 +2,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
 (async()=>{let browser;try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [320,390]){
- const page=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const browserPage=await browser.newPage({viewport:{width,height:844},isMobile:true,hasTouch:true});let page=browserPage;page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const png=await page.screenshot();
  await page.route('https://**/*',r=>r.request().resourceType()==='image'?r.fulfill({contentType:'image/png',body:png}):r.abort());
  await page.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:'/* Mock Supabase for isolated tests. */'}));
@@ -14,7 +14,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   }})};
  });
  page.on('dialog',d=>d.accept());
- await page.goto((process.env.TAESAN_TEST_URL||'http://127.0.0.1:8000')+'/daily.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('admin-on'));await page.locator('#manageBtn').click();
+ await page.goto((process.env.TAESAN_TEST_URL||'http://127.0.0.1:8000')+'/admin.html?module=daily',{waitUntil:'domcontentloaded'});await browserPage.locator('iframe[name="workspace-daily"]').waitFor();page=browserPage.frame('workspace-daily');await page.waitForFunction(()=>document.body.classList.contains('admin-on'));
  async function upload(files){await page.locator('#entryPhotoFile').setInputFiles(files);await page.evaluate(()=>{document.getElementById('uploadPhotoBtn').onclick();document.getElementById('uploadPhotoBtn').onclick()});await page.waitForFunction(()=>!photoUploading);}
  const A={name:'a.png',mimeType:'image/png',buffer:png},A2={name:'same-renamed.png',mimeType:'image/png',buffer:png},B={name:'b.png',mimeType:'image/png',buffer:Buffer.concat([png,Buffer.from('different')])};
  await upload([A,A2,B]);assert.equal(await page.locator('#uploadPreview .previewItem').count(),2);assert.equal(await page.evaluate(()=>fixture.uploaded.length),2);
@@ -48,8 +48,8 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  await page.evaluate(()=>editEntry({id:'counts-only',date:'2026-09-02',platform:'Weverse',kind:'帖子',title:'count-only historical record',photo:'',photos:[],photo_count:7,video_count:0}));
  assert.equal(await page.locator('#entryPhotoCount').inputValue(),'7');
  await page.evaluate(()=>renderUploadPreview());assert.equal(await page.locator('#entryPhotoCount').inputValue(),'7');
- await page.screenshot({path:'/tmp/taesan-photo-upload-'+width+'.png',fullPage:true});
- assert.deepEqual(errors,[]);console.log('PASS mobile '+width+': visible non-overlapping delete/order buttons, SHA-256 duplicate and double-click protection, last-photo clear, draft cleanup/retry/shared-reference safety, partial retry, video-cover counts; videos unchanged.');await page.close();
+ await browserPage.screenshot({path:'/tmp/taesan-photo-upload-'+width+'.png',fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS workbench mobile '+width+': visible non-overlapping delete/order buttons, SHA-256 duplicate and double-click protection, last-photo clear, draft cleanup/retry/shared-reference safety, partial retry, video-cover counts; videos unchanged.');await browserPage.close();
  }
  }finally{await browser?.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

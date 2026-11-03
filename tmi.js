@@ -53,7 +53,7 @@ async function getCategories(){const {data,error}=await client.from('tmi_categor
 function edit(row){$('recordId').value=row.id;for(const [id,key]of Object.entries({title:'title',content:'content_zh',korean:'original_ko',translation:'translation_zh',editCategory:'category',editStage:'life_stage',date:'public_date',source:'source',url:'source_url',note:'source_note'}))$(id).value=row[key]||'';$('tags').value=row.tags.join('，');$('published').checked=row.published;images=row.images.slice();$('files').value='';previewImages();$('editStatus').textContent='正在编辑 '+row.id.slice(0,8);$('admin').scrollIntoView({behavior:'smooth'});}
 function reset(){if(busy)return;$('editor').reset();$('recordId').value=uuid();$('editCategory').value='其他';images=[];previewImages();$('editStatus').textContent='新档案 · 默认保存为草稿';}
 function previewImages(){const box=$('previews');box.replaceChildren();images.forEach((path,i)=>{const f=el('figure'),img=el('img');img.alt='待保存图片 '+(i+1);fillImage(img,path);f.append(img,button('↑',()=>{if(i){[images[i-1],images[i]]=[images[i],images[i-1]];previewImages();}}),button('↓',()=>{if(i<images.length-1){[images[i+1],images[i]]=[images[i],images[i+1]];previewImages();}}),button('移除',()=>{images.splice(i,1);previewImages();}));box.append(f);});}
-async function auth(){const {data,error}=await client.auth.getUser();admin=!error&&data.user?.id===ADMIN;$('admin').hidden=!admin;$('visibilityLabel').hidden=!admin;if(admin){$('identity').textContent='已验证管理员 · '+data.user.email;await getCategories();reset();}else{$('admin').hidden=true;$('visibility').value='published';$('previews').replaceChildren();images=[];pending=[];$('importPreview').replaceChildren();$('confirmImport').disabled=true;}await load(true);}
+async function auth(){const {data,error}=await client.auth.getUser();admin=!!window.TAESAN_WORKSPACE&&!error&&data.user?.id===ADMIN;$('admin').hidden=!admin;$('visibilityLabel').hidden=!admin;if(admin){$('identity').textContent='已验证管理员 · '+data.user.email;await getCategories();reset();}else{$('admin').hidden=true;$('visibility').value='published';$('previews').replaceChildren();images=[];pending=[];$('importPreview').replaceChildren();$('confirmImport').disabled=true;}await load(true);}
 async function allRecords(){let all=[];for(let n=0;;n+=1000){const {data,error}=await client.from('tmi_records').select('*').order('id').range(n,n+999);if(error)throw error;all.push(...data);if(data.length<1000)return all;}}
 function drawImport(){const b=$('importPreview');b.replaceChildren();pending.forEach(p=>b.append(el('p',`${p.index+1}. ${p.row?.title||p.row?.content_zh?.slice(0,35)||'无标题'} — ${p.error||p.status||'待导入'}`,p.error?'error':'')));$('confirmImport').disabled=importBusy||!pending.some(p=>!p.error&&p.status!=='成功'&&p.status!=='已有 ID，跳过');}
 async function init(){
@@ -72,5 +72,6 @@ async function init(){
  $('cancelImport').onclick=()=>{if(importBusy)return;pending=[];$('importFile').value='';drawImport();};
 }
 document.addEventListener('DOMContentLoaded',init);
+window.addEventListener('taesan-auth-changed',()=>{if(client)void auth().catch(e=>status(e.message));});
 })();
 

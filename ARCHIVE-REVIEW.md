@@ -7,16 +7,17 @@
 | 分区 | 页面 | 处理 |
 | --- | --- | --- |
 | 首页 | index.html | 复用上传的 Zine 参考和三张原图；独立 WORK / SELF / DAILY 链接；移动端排版及减少动态效果支持 |
-| SELF | self.html | TMI、THOUGHTS、FRAGMENTS 独立入口 |
+| SELF | self.html | 仅保留 TMI、THOUGHTS 两个入口；FRAGMENTS 已从导航移除，旧页面不删除 |
 | TMI | tmi.html | 保留分类、搜索、双语、签名图片、后台、导入导出及发布状态；添加统一导航与配色 |
-| THOUGHTS / FRAGMENTS | thoughts.html / fragments.html | 独立页面；中文、韩文、日期、来源、图片、标签、分类、搜索、排序、分页及后台 |
+| THOUGHTS | thoughts.html | 独立页面；中文、韩文、日期、来源、图片、标签、分类、搜索、排序和分页；编辑移入管理工作台 |
 | WORK | work.html | STAGE、MUSIC、SHORT VIDEOS 入口 |
 | STAGE | stage.html | 三类舞台；封面、标题、日期、演出、来源及后台 |
 | MUSIC | music.html | 原有作品、团体音乐、推荐列表、播放器、歌词、私有上传及后台均保留；不合并 music_tracks 和 music_works |
 | SHORT VIDEOS | short-videos.html | Solo / Special TikTok、合作对象、日期、封面、来源及后台；原 entries 中的 TikTok 只读复用并标记待分类 |
 | DAILY | daily.html | 复用原营业页面全部逻辑；公开时间线仅展示指定五类平台；保留 DM 数量、日历、照片、视频、年度统计和管理 |
-| DM JOURNEY | journey.html | 月份切换、按日数量、城市位置、播放和地点管理；仅跨城市时移动；October 原数据及原页面均保留 |
-| MONTHLY ARCHIVE | daily.html?tab=monthly | 同月时间线、图片墙、DM 数量和 Journey 互联 |
+| DM JOURNEY | journey.html | 独立页面，复用原 October 的浅蓝地图、气泡、头像、日期条和播放 UI；从 DM COUNTS 按所选月份直达；同城不移动；支持月份切换和真实数量读取 |
+| MONTHLY ARCHIVE | daily.html?tab=monthly | 同月时间线、图片墙及 DM COUNTS 互联；Journey 链接统一放在 DM COUNTS 内 |
+| 管理工作台 | admin.html | 统一登录/退出；营业、DM、图片视频、TMI、THOUGHTS、STAGE、SHORT VIDEOS、音乐作品、推荐、导入导出及 Journey 地点均在此操作；复用现有表单，切换模块保留未保存内容 |
 | 旧首页 | legacy-daily.html | 与改版前首页逐字节一致的备份；其他历史页面不删除 |
 
 ## 数据与权限检查
@@ -25,7 +26,8 @@
 - 匿名 Publishable Key 实际 REST 读取：69 / 31 / 115 / 0 / 1 / 0。TMI 48 条当前未公开，未自动改变发布状态。
 - 管理员沿用现有固定 UID；访客仅能读取已发布的新档案。草稿图片拟存入私有 archive-images 桶并按发布状态提供读取权限。
 - 现有 daily-photos、tmi-images、music-media 桶及文件保持原状。发现旧视频上传引用的 daily-videos 桶不存在；另附待审修复 SQL。
-- 预览启用 preview-config.js。fetch / XMLHttpRequest 的生产数据写入会被拦截；签名图片读取允许通过。新模块可保存浏览器本机草稿，未写入生产数据库。
+- 预览启用 preview-config.js。fetch / XMLHttpRequest 的生产数据写入会被拦截；签名图片读取允许通过。新模块可在管理工作台保存浏览器本机草稿，公开页面不展示本机草稿、编辑器或上传控件。
+- 工作台沿用 Supabase 的原有会话和固定管理员 UID，各模块复用已有实现。统一退出会通知所有已打开模块更新权限；旧管理地址自动跳转工作台。
 - DM 保留数量，不在公开 DAILY LOG 时间线展示；非零 DM 数量仍使日历当天标为营业。
 - 原 entries 中非指定平台仍可通过原管理功能查看；照片墙保留原有媒体来源。
 
@@ -39,12 +41,13 @@
 
 ## 验证
 
-- Playwright：320 / 390 / 768 / 1440 宽度，44 个页面及视口组合；入口、页面可读性、无横向溢出、公开平台筛选、DM 日历、图片左右滑动、月份关联、原 TikTok 保留、本机草稿保存与编辑、Journey 跨城移动、fetch / XHR 写入阻止。
+- Playwright：320 / 390 / 768 / 1440 宽度，44 个页面及视口组合；SELF 两个入口、公开页面无编辑或上传控件、公开平台筛选、DM 日历、图片左右滑动、DM COUNTS 的月份链接、原版 Journey 地图与跨城移动、fetch / XHR 写入阻止。
+- 工作台隔离测试：320 / 390 / 1440；统一登录/退出、七个管理模块、上传表单、本机草稿、切换保留未保存内容、公开页面不泄漏草稿、旧管理地址重定向。认证及所有数据使用测试桩，未写生产数据。
 - 原照片回归：320 / 390，多图上传、排序、去重、末图移除、共享文件保护、失败清理与重试、部分上传重试、视频封面计数。
 - 原音乐回归：115 条分页、原数据库 URL 保持、封面回退、加载失败重试、搜索及原标签页。
 - 真实生产只读 API 与匿名角色查询均通过。
 - 测试环境 Chromium 经代理直连 Supabase 时出现 ERR_CERT_AUTHORITY_INVALID；未关闭 TLS 验证。测试传输改经 Node 已配置的可信 CA 与代理，浏览器界面读取真实生产响应后通过：69 条营业、31 天 DM、115 首推荐音乐、独立作品读取、TMI 未公开状态及 October Journey；没有页面脚本异常。该测试验证真实读取与前端整合，不等同于在用户设备上验收证书或管理员写入。
-- git diff --check 通过；data.json、tmi.js、music.js、music-playlist.js、October 原页面未改动；旧首页备份哈希与原首页相同。
+- 检查保留原文件的 CRLF 换行与旧首页空白行；data.json、music-playlist.js、October 原页面未改动；旧首页备份哈希与原首页相同。TMI、音乐及营业脚本仅增加工作台上下文和统一权限同步，原有数据结构与媒体操作保留。
 
 ## 确认后
 

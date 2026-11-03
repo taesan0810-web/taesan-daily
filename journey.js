@@ -37,14 +37,16 @@ async function load(){
 }
 async function init(){
  try{const response=await fetch('journey-seed.json');if(response.ok)seed=await response.json();}catch{}
- if(window.supabase&&window.TAESAN_SUPABASE_PUBLISHABLE_KEY){client=window.supabase.createClient(BASE,window.TAESAN_SUPABASE_PUBLISHABLE_KEY);const {data,error}=await client.auth.getUser();admin=!error&&data.user?.id===ADMIN;}
+ if(window.supabase&&window.TAESAN_SUPABASE_PUBLISHABLE_KEY){client=window.supabase.createClient(BASE,window.TAESAN_SUPABASE_PUBLISHABLE_KEY);const {data,error}=await client.auth.getUser();admin=!!window.TAESAN_WORKSPACE&&!error&&data.user?.id===ADMIN;client.auth.onAuthStateChange(()=>setTimeout(async()=>{const {data,error}=await client.auth.getUser();admin=!!window.TAESAN_WORKSPACE&&!error&&data.user?.id===ADMIN;$('locationEditor').hidden=!admin&&!window.TAESAN_PREVIEW;},0));}
  const m=new URLSearchParams(location.search).get('month');$('journeyMonth').value=/^\d{4}-(0[1-9]|1[0-2])$/.test(m||'')?m:new Date().toISOString().slice(0,7);
  $('journeyMonth').onchange=()=>{if($('journeyMonth').value)void load();};$('previousDay').onclick=()=>{stop();render(day-1);};$('nextDay').onclick=()=>{stop();render(day+1);};
  $('playJourney').onclick=()=>{if(timer){stop();return;}if(day===daysInMonth())render(1);$('playJourney').textContent='暂停';timer=setInterval(()=>{if(day===daysInMonth()){stop();return;}render(day+1);},1800);};
  $('journeyManage').onclick=()=>{if(admin||window.TAESAN_PREVIEW){$('locationEditor').hidden=false;$('locationEditor').scrollIntoView({behavior:'smooth'});}else location.href='daily.html?tab=manage';};
  $('locationForm').onsubmit=async e=>{e.preventDefault();try{const row={date:$('locationDate').value,city:$('city').value.trim(),x:Number($('cityX').value),source_url:$('locationSource').value.trim()};if(!row.city||row.x<8||row.x>92||row.source_url&&!safe(row.source_url))throw Error('请检查城市、位置及 HTTPS 来源链接');if(window.TAESAN_PREVIEW){local=local.filter(x=>x.date!==row.date);local.push(row);localStorage.setItem(localKey,JSON.stringify(local));$('locationStatus').textContent='已保存本机地点草稿';}else{if(!admin)throw Error('请先登录管理员');const {error}=await client.from('journey_locations').upsert(row,{onConflict:'date'});if(error)throw error;$('locationStatus').textContent='已保存云端地点';}await load();}catch(e){$('locationStatus').textContent='保存失败：'+e.message;}};
  $('exportLocations').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({locations:mergedLocations()},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='journey-'+monthValue()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+ if(window.TAESAN_WORKSPACE){$('locationEditor').hidden=!admin&&!window.TAESAN_PREVIEW;const toolbar=$('journeyMonth').closest('.archive-toolbar');$('locationEditor').prepend(toolbar);toolbar.querySelectorAll('a,button').forEach(el=>el.hidden=true);}
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});window.addEventListener('pagehide',stop);await load();
+ window.addEventListener('taesan-auth-changed',async()=>{if(!client)return;const {data,error}=await client.auth.getUser();admin=!!window.TAESAN_WORKSPACE&&!error&&data.user?.id===ADMIN;$('locationEditor').hidden=!admin&&!window.TAESAN_PREVIEW;});
 }
 document.addEventListener('DOMContentLoaded',init);
 })();

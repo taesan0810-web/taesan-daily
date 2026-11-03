@@ -15,7 +15,7 @@ function renderPublicMonth(){
  const active=new Set([...rows.map(x=>x.date),...dm.filter(x=>['text','voice','photos','videos'].some(k=>Number(x[k])>0)).map(x=>x.date)]);
  stats($('monthStats'),[[rows.length,'公开营业条目'],[active.size,'营业日期（含 DM）'],[rows.filter(x=>platformName(x)==='Weverse Post').length,'Weverse Post'],[rows.filter(isWeverseReply).length,'Weverse Reply']]);
  const box=$('monthList');box.replaceChildren();const links=make('div',undefined,'archive-actions');
- for(const [label,url]of [['DM JOURNEY','journey.html?month='+month],['PHOTO WALL','daily.html?tab=photos&month='+month],['DM COUNTS','daily.html?tab=dm&month='+month]]){const a=make('a',label+' ↗');a.href=url;links.append(a);}box.append(links);
+ for(const [label,url]of [['PHOTO WALL','daily.html?tab=photos&month='+month],['DM COUNTS','daily.html?tab=dm&month='+month]]){const a=make('a',label+' ↗');a.href=url;links.append(a);}box.append(links);
  const dates=[...new Set(rows.map(x=>x.date))].sort();if(!dates.length)box.append(make('p','这个月暂无公开营业记录。','tiny'));
  for(const date of dates){const group=make('details',undefined,'dateblock'),summary=make('summary',date+' / '+rows.filter(x=>x.date===date).length+' 条');group.append(summary);rows.filter(x=>x.date===date).forEach(row=>group.append(record(row)));box.append(group);}
 }
@@ -28,13 +28,21 @@ document.querySelector('.brand').textContent='DAILY / THE DAYS';
 document.querySelector('.hero').innerHTML='<div class="eyebrow">03 / THE DAYS</div><h1>DAILY ARCHIVE</h1><div>每天的公开记录</div>';
 const names={daily:'DAILY LOG',monthly:'MONTHLY ARCHIVE',dm:'DM COUNTS',photos:'PHOTO WALL',yearly:'YEARLY',manage:'管理'};
 document.querySelectorAll('#tabs button').forEach(b=>{b.textContent=names[b.dataset.tab]||b.textContent;});
-const journey=make('a','DM JOURNEY ↗');journey.href='journey.html';journey.className='journey-nav';journey.style.cssText='padding:10px 13px;text-decoration:none';$('tabs').insertBefore(journey,$('tabs').children[2]);
+const journey=make('a','DM JOURNEY ↗');journey.id='dmJourneyLink';journey.href='journey.html?month='+$('dmMonth').value;journey.className='journey-nav';
+$('dmMonth').closest('.toolbar').append(journey);
+const originalRenderDm=renderDm;
+renderDm=function(){originalRenderDm();journey.href='journey.html?month='+($('dmMonth').value||month);};
+$('dmMonth').onchange=renderDm;
 document.querySelectorAll('.tmi-nav,.music-nav').forEach(a=>a.remove());
 const originalTab=tab;
 tab=function(name){originalTab(name);if(name!=='music'){const url=new URL(location.href);url.searchParams.set('tab',name);history.replaceState(null,'',url);}};
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));$('manageBtn').onclick=()=>tab('manage');
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+$('manageBtn').hidden=true;
+$('tabs').querySelector('[data-tab="manage"]')?.remove();
+const requestedTab=new URLSearchParams(location.search).get('tab')||location.hash.slice(1);
+if(requestedTab==='manage'&&!window.TAESAN_WORKSPACE)location.replace('admin.html?module=daily');
 function applyDailyLocation(){const p=new URLSearchParams(location.search),m=p.get('month');if(/^\d{4}-(0[1-9]|1[0-2])$/.test(m||'')){month=m;calMonth=m;for(const id of ['monthPicker','photoMonth','dmMonth'])$(id).value=m;}const name=p.get('tab')||location.hash.slice(1);if(Object.hasOwn(names,name))originalTab(name);render();}
 applyDailyLocation();
-const managementLinks=make('nav',undefined,'archive-actions');managementLinks.setAttribute('aria-label','档案管理入口');
-for(const [label,path]of [['THOUGHTS','thoughts.html'],['FRAGMENTS','fragments.html'],['STAGE','stage.html'],['SHORT VIDEOS','short-videos.html'],['TMI','tmi.html'],['MUSIC','music.html'],['JOURNEY','journey.html']]){const a=make('a',label+' ↗');a.href=path;managementLinks.append(a);}
-$('manage').prepend(managementLinks);
+if(window.TAESAN_WORKSPACE)originalTab('manage');
+if(window.TAESAN_WORKSPACE)$('musicForm').closest('section').hidden=true;
+window.addEventListener('taesan-auth-changed',()=>{void syncAuth().then(render);});

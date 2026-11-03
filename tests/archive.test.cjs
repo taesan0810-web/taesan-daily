@@ -25,7 +25,7 @@ const tracks=JSON.parse(fs.readFileSync(path.join(root,'album-cover-data.json'))
   });
   for(const file of ['index.html','work.html','self.html','daily.html','tmi.html','music.html','thoughts.html','fragments.html','stage.html','short-videos.html','journey.html']){
    await page.goto(base+'/'+file,{waitUntil:'networkidle'});
-   assert(await page.locator('h1').first().isVisible(),file);
+   assert(await page.locator(file==='journey.html'?'#journeyTitle':'h1').first().isVisible(),file);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);assert(!overflow,`${file} overflow at ${width}`);
    if(file==='index.html'){
     for(const k of ['work','self','daily'])assert.equal(await page.locator('a.tile.'+k).getAttribute('href'),k+'.html');
@@ -33,6 +33,8 @@ const tracks=JSON.parse(fs.readFileSync(path.join(root,'album-cover-data.json'))
     await page.screenshot({path:path.join(shots,'home-'+width+'.png'),fullPage:true});
    }
    if(file==='tmi.html')assert.equal(await page.locator('#cards .card').count(),1);
+   if(file==='self.html'){assert.equal(await page.locator('.chapter-links a').count(),2);assert.equal(await page.locator('a[href="fragments.html"]').count(),0);}
+   if(file!=='index.html'&&file!=='journey.html')assert(await page.locator('.archive-nav a[href="admin.html"]').isVisible());
    if(file==='daily.html'){
     await page.locator('#dayPicker').fill('2026-10-01');await page.locator('#dayPicker').dispatchEvent('change');
     assert.equal(await page.locator('#dailyList article').count(),2);assert(!((await page.locator('#dailyList').innerText()).includes('DM PRIVATE')));assert(!((await page.locator('#dailyList').innerText()).includes('TIKTOK LEGACY')));
@@ -41,24 +43,26 @@ const tracks=JSON.parse(fs.readFileSync(path.join(root,'album-cover-data.json'))
     assert(await page.locator('#calendar button').filter({hasText:/^2$/}).evaluate(el=>el.classList.contains('has')));
     await page.locator('.slideActions button').last().click();assert.equal(await page.locator('.slideActions span').textContent(),'2 / 2');
     await page.screenshot({path:path.join(shots,'daily-'+width+'.png'),fullPage:true});
-    await page.goto(base+'/daily.html?tab=monthly&month=2026-10');await page.waitForLoadState('networkidle');assert(await page.locator('#monthly').isVisible());assert.equal(await page.locator('#monthList a').first().getAttribute('href'),'journey.html?month=2026-10');
+    assert.equal(await page.locator('#tabs a.journey-nav').count(),0);assert(await page.locator('#manageBtn').isHidden());assert.equal(await page.locator('input[type=file]:visible').count(),0);
+    await page.goto(base+'/daily.html?tab=dm&month=2026-10');await page.waitForLoadState('networkidle');assert(await page.locator('#dmJourneyLink').isVisible());assert.equal(await page.locator('#dmJourneyLink').getAttribute('href'),'journey.html?month=2026-10');await page.locator('#dmMonth').fill('2026-11');await page.locator('#dmMonth').dispatchEvent('change');assert.equal(await page.locator('#dmJourneyLink').getAttribute('href'),'journey.html?month=2026-11');
+    await page.goto(base+'/daily.html?tab=monthly&month=2026-10');await page.waitForLoadState('networkidle');assert(await page.locator('#monthly').isVisible());assert.equal(await page.locator('#monthList a').first().getAttribute('href'),'daily.html?tab=photos&month=2026-10');
    }
    if(['thoughts.html','fragments.html','stage.html','short-videos.html'].includes(file)){
-    await page.locator('#manage').click();await page.locator('#title').fill('LOCAL '+file);await page.locator('#content').fill('中文测试内容');if(await page.locator('#korean').isVisible())await page.locator('#korean').fill('한국어 원문');
-    await page.locator('#sourceUrl').fill('https://www.youtube.com/watch?v=fixture');await page.locator('#tags').fill('测试,archive');await page.locator('#saveLocal').click();assert.match(await page.locator('#editStatus').textContent(),/已保存本机/);
-    await page.reload({waitUntil:'networkidle'});assert.equal(await page.locator('#records article').count(),file==='short-videos.html'?2:1);await page.locator('#records button').first().click();assert.equal(await page.locator('#title').inputValue(),'LOCAL '+file);assert(await page.locator('#saveCloud').isDisabled());
+    assert(await page.locator('#manage').isHidden());assert(await page.locator('#editorPanel').isHidden());assert.equal(await page.locator('input[type=file]:visible').count(),0);assert.equal(await page.locator('#records article').count(),file==='short-videos.html'?1:0);
    }
    if(file==='journey.html'){
     await page.locator('#journeyMonth').fill('2026-10');await page.locator('#journeyMonth').dispatchEvent('change');await page.waitForFunction(()=>document.querySelectorAll('[data-day]').length===31);
     await page.locator('[data-day="1"]').click();const start=await page.locator('#traveler').evaluate(e=>e.style.left);await page.locator('[data-day="2"]').click();assert.equal(await page.locator('#traveler').evaluate(e=>e.style.left),start);await page.locator('[data-day="24"]').click();assert.notEqual(await page.locator('#traveler').evaluate(e=>e.style.left),start);
+    assert(await page.locator('svg.world').isVisible());assert.equal(await page.locator('input[type=file]').count(),0);assert.equal(await page.locator('#locationEditor').count(),0);
+    await page.waitForTimeout(1400);
     await page.screenshot({path:path.join(shots,'journey-'+width+'.png'),fullPage:true});
-    await page.locator('#journeyMonth').fill('2026-11');await page.locator('#journeyMonth').dispatchEvent('change');await page.waitForFunction(()=>document.querySelectorAll('[data-day]').length===30);assert(await page.locator('#traveler').isHidden());assert.equal(await page.locator('#journeyNumbers b').first().textContent(),'—');
+    await page.locator('#journeyMonth').fill('2026-11');await page.locator('#journeyMonth').dispatchEvent('change');await page.waitForFunction(()=>document.querySelectorAll('[data-day]').length===30);assert(await page.locator('#traveler').isHidden());assert.equal(await page.locator('#numbers strong').first().textContent(),'—');
    }
    checked++;
   }
   // Both fetch and XHR writes must be blocked before reaching the network.
   const guard=await page.evaluate(async()=>{const response=await fetch('https://shwilnzlpychjoasvqtg.supabase.co/rest/v1/entries',{method:'POST',body:'{}'});let xhr=false;try{new XMLHttpRequest().open('POST','https://shwilnzlpychjoasvqtg.supabase.co/storage/v1/object/music-media/test');}catch{xhr=true;}return {status:response.status,xhr};});assert.deepEqual(guard,{status:403,xhr:true});assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);
-  await context.close();console.log('PASS '+width+'px: pages, navigation, public filters, DM calendar, slider, local drafts, monthly Journey, no production writes');
+  await context.close();console.log('PASS '+width+'px: public pages, two SELF sections, no public editors/uploads, DM COUNTS link, original Journey UI, monthly navigation, DM calendar, slider, no production writes');
  }
  console.log('PASS '+checked+' page/viewport combinations');
 }finally{await browser?.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
