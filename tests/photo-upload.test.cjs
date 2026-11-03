@@ -6,6 +6,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  const png=await page.screenshot();
  await page.route('https://**/*',r=>r.request().resourceType()==='image'?r.fulfill({contentType:'image/png',body:png}):r.abort());
  await page.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:'/* Mock Supabase for isolated tests. */'}));
+ await page.route('**/supabase-local.js',r=>r.fulfill({contentType:'application/javascript',body:'/* Isolated fixture SDK. */'}));
  await page.addInitScript(()=>{
   window.fixture={rows:[],uploaded:[],removed:[],saved:[],failRemove:false,failRead:false,failSave:false,failSecond:false};
   window.supabase={createClient:()=>({auth:{onAuthStateChange:()=>{},getUser:async()=>({data:{user:{id:'0c40000a-9f2c-46dc-8ba7-a0b016e6988e',email:'fixture@example.invalid'}},error:null})},storage:{from:()=>({getPublicUrl:path=>({data:{publicUrl:'https://fixture.invalid/'+path}}),upload:async(path,file)=>{await new Promise(r=>setTimeout(r,30));if(fixture.failSecond&&fixture.uploaded.length===1){fixture.failSecond=false;return {error:{message:'fixture upload failure'}}}fixture.uploaded.push(path);return {error:null}},remove:async paths=>{if(fixture.failRemove)return {error:{message:'fixture Storage denied'}};fixture.removed.push(...paths);return {data:paths.map(name=>({name})),error:null}}})},from:table=>{
@@ -13,7 +14,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   }})};
  });
  page.on('dialog',d=>d.accept());
- await page.goto((process.env.TAESAN_TEST_URL||'http://127.0.0.1:8000')+'/',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('admin-on'));await page.locator('#manageBtn').click();
+ await page.goto((process.env.TAESAN_TEST_URL||'http://127.0.0.1:8000')+'/daily.html',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('admin-on'));await page.locator('#manageBtn').click();
  async function upload(files){await page.locator('#entryPhotoFile').setInputFiles(files);await page.evaluate(()=>{document.getElementById('uploadPhotoBtn').onclick();document.getElementById('uploadPhotoBtn').onclick()});await page.waitForFunction(()=>!photoUploading);}
  const A={name:'a.png',mimeType:'image/png',buffer:png},A2={name:'same-renamed.png',mimeType:'image/png',buffer:png},B={name:'b.png',mimeType:'image/png',buffer:Buffer.concat([png,Buffer.from('different')])};
  await upload([A,A2,B]);assert.equal(await page.locator('#uploadPreview .previewItem').count(),2);assert.equal(await page.evaluate(()=>fixture.uploaded.length),2);

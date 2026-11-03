@@ -9,14 +9,15 @@ let png;
  const p=await b.newPage();p.setDefaultTimeout(15000);png=await p.screenshot();const errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.route('https://**/*',r=>r.request().resourceType()==='image'?r.fulfill({contentType:'image/png',body:png}):r.abort());
  await p.route('https://cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'application/javascript',body:'/* read-only fixture SDK */'}));
+ await p.route('**/supabase-local.js',r=>r.fulfill({contentType:'application/javascript',body:'/* Isolated fixture SDK. */'}));
  await p.addInitScript(({rows})=>{
   window.musicRanges=[];
   window.supabase={createClient:()=>({auth:{onAuthStateChange:()=>{},getUser:async()=>({data:{user:null},error:null})},from:table=>{
    const query={select:()=>query,order:()=>query,range:async(start,end)=>{if(table==='music_tracks'){window.musicRanges.push([start,end]);return {data:rows.slice(start,end+1),error:null}}return {data:[],error:null}}};return query;
   }})};
  },{rows});
- await p.goto((process.env.ALBUM_COVERS_BASE_URL||'http://127.0.0.1:8000')+'/',{waitUntil:'domcontentloaded'});
- await p.locator('#tabs button[data-tab="music"]').click();await p.waitForFunction(()=>document.querySelectorAll('#musicList .music-track').length===115);
+ await p.goto((process.env.ALBUM_COVERS_BASE_URL||'http://127.0.0.1:8000')+'/daily.html',{waitUntil:'domcontentloaded'});
+ await p.evaluate(()=>renderMusic());await p.waitForFunction(()=>document.querySelectorAll('#musicList .music-track').length===115);
  assert.deepEqual(await p.evaluate(()=>musicRanges),[[0,49],[50,99],[100,149],[150,199]]);
  assert.equal(await p.locator('#musicList img').count(),110);assert.equal(await p.locator('#musicList .music-cover-placeholder').count(),5);
  const before=await p.evaluate(()=>musicRows.map(r=>r.cover_url));assert.deepEqual(before,rows.map(r=>r.cover_url));
@@ -27,6 +28,7 @@ let png;
  await p.evaluate(url=>{musicRows[0].cover_url=url;renderMusic()},url);
  await p.locator('#musicList img').evaluateAll(imgs=>imgs.forEach(i=>i.loading='eager'));
  await p.waitForFunction(()=>[...document.querySelectorAll('.music-cover-status')].some(e=>e.textContent.includes('封面加载失败')));
+ await p.evaluate(()=>{document.querySelector('#music')?.classList.remove('hidden');});
  const box=p.locator('.music-cover-box').filter({hasText:'封面加载失败'}).first();assert(await box.getByText('重试',{exact:true}).isVisible());assert(await box.getByText('打开封面原图').isVisible());
  await p.unroute(url);await box.getByText('重试',{exact:true}).click();
  await p.waitForFunction(()=>![...document.querySelectorAll('.music-cover-status')].some(e=>e.textContent.includes('封面加载失败')));
