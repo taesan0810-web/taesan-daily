@@ -1,6 +1,6 @@
 # TAESAN PERSONAL ARCHIVE 改版审阅
 
-基线：GitHub `main` 提交 `896f617209072619eec5b50435e9377555cd7d49`。经用户确认，本次仅提交独立 `preview-zine-archive-review` 分支用于审阅；未合并 main、未更改正式 GitHub Pages，也未修改生产数据库。
+旧生产基线：`896f617209072619eec5b50435e9377555cd7d49`。本文保留审阅阶段说明；用户现已确认正式发布和具体数据库权限范围，正式部署与录入说明见 [DEPLOYMENT.md](DEPLOYMENT.md)。预览分支继续只读，正式版本已关闭预览写入拦截。
 
 ## 页面与功能
 
@@ -33,13 +33,13 @@
 - DM 保留数量，不在公开 DAILY LOG 时间线展示；非零 DM 数量仍使日历当天标为营业。
 - 原 entries 中非指定平台仍可通过原管理功能查看；照片墙保留原有媒体来源。
 
-## 待确认数据库变更
+## 已实施数据库变更
 
-`archive-schema-proposal.sql`：新增 archive_records、journey_locations、对应 RLS、索引、权限和私有图片桶。未执行。不会修改既有数据表。
+`archive-schema-proposal.sql`：历史审阅草案。新增 archive_records、journey_locations、对应 RLS、索引、权限和私有图片桶，现已通过迁移落实。不会修改既有数据表；请勿重复执行草案。
 
-`storage-repair-proposal.sql`：仅补建 daily-videos 桶及管理员上传权限。未执行。原公开视频功能在缺失该桶时无法完成真实上传。
+`storage-repair-proposal.sql`：历史审阅草案。daily-videos 公开桶及管理员上传权限现已补齐，实际执行的完整 SQL 见 archive-schema.sql。
 
-新增档案云端保存及图片上传尚不能在生产验收，须审阅并批准 SQL 后再验证。未进行真实登录、上传、删除或其他生产写入测试。
+已验证生产新表的管理员增改删、公开读取、草稿隔离和非管理员写入拒绝，测试事务全部回滚；正式模式云端保存和图片上传前端流程以隔离 API 测试通过。未获取用户密码，未冒用管理员会话进行实际媒体上传。
 
 ## 验证
 
