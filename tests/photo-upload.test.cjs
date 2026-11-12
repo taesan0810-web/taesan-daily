@@ -36,7 +36,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  await upload([A]);await page.evaluate(()=>fixture.rows.push({id:'other',photo:uploadedPhotos[0],photos:[uploadedPhotos[0]]}));const beforeShared=await page.evaluate(()=>fixture.removed.length);await page.getByRole('button',{name:'删除第 1 张照片',exact:true}).click();await page.waitForFunction(()=>!photoCleanupTask);assert.equal(await page.evaluate(()=>fixture.removed.length),beforeShared);
  // Partial upload retry does not add the successful first file twice.
  await page.evaluate(()=>{fixture.uploaded=[];fixture.failSecond=true});await upload([A,B]);assert.equal(await page.locator('#uploadPreview .previewItem').count(),1);await upload([A,B]);assert.equal(await page.locator('#uploadPreview .previewItem').count(),2);assert.equal(await page.evaluate(()=>fixture.uploaded.length),2);
- await page.locator('#entryVideoCover').check();assert.equal(await page.locator('#entryPhotoCount').inputValue(),'1');await page.locator('#entryVideoCover').uncheck();
+ await page.locator('summary').filter({hasText:'补充资料'}).click();await page.locator('#entryVideoCover').check();assert.equal(await page.locator('#entryPhotoCount').inputValue(),'1');await page.locator('#entryVideoCover').uncheck();
  // Save failure preserves active draft photos; successful save commits ownership before reset.
  await page.evaluate(()=>{fixture.failSave=true});
  const active=await page.evaluate(()=>uploadedPhotos.slice());

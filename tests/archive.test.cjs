@@ -11,6 +11,7 @@ const tracks=JSON.parse(fs.readFileSync(path.join(root,'album-cover-data.json'))
  let checked=0;
  for(const width of [320,390,768,1440]){
   const context=await browser.newContext({viewport:{width,height:900},isMobile:width<700,hasTouch:width<700});const page=await context.newPage();page.setDefaultTimeout(12000);const errors=[],writes=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/preview-config.js',route=>route.fulfill({contentType:'application/javascript',body:'window.TAESAN_PREVIEW=true;'}));
   await page.route('https://**/*',async route=>{const req=route.request(),u=new URL(req.url());if(req.resourceType()==='image')return route.fulfill({contentType:'image/png',body:png});
    if(u.hostname.endsWith('.supabase.co')){
     if(req.method()!=='GET'&&!u.pathname.includes('/sign/'))writes.push(req.method()+' '+u.pathname);
@@ -28,20 +29,20 @@ const tracks=JSON.parse(fs.readFileSync(path.join(root,'album-cover-data.json'))
    assert(await page.locator(file==='journey.html'?'#journeyTitle':'h1').first().isVisible(),file);
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2);assert(!overflow,`${file} overflow at ${width}`);
    if(file==='index.html'){
-    for(const k of ['work','self','daily'])assert.equal(await page.locator('a.tile.'+k).getAttribute('href'),k+'.html');
-    assert(await page.locator('.mood img').evaluateAll(a=>a.every(i=>i.complete&&i.naturalWidth>0)));
+    assert(new URL(page.url()).pathname.endsWith('/daily.html'));
+    assert.equal(await page.locator('h1').textContent(),'每日记录');
     await page.screenshot({path:path.join(shots,'home-'+width+'.png'),fullPage:true});
    }
    if(file==='tmi.html')assert.equal(await page.locator('#cards .card').count(),1);
    if(file==='self.html'){assert.equal(await page.locator('.chapter-links a').count(),2);assert.equal(await page.locator('a[href="fragments.html"]').count(),0);}
-   if(file!=='index.html'&&file!=='journey.html')assert(await page.locator('.archive-nav a[href="admin.html"]').isVisible());
+   if(file!=='index.html'&&file!=='journey.html'){await page.locator('.archive-menu summary').click();assert(await page.locator('.archive-nav a[href="admin.html"]').isVisible());await page.locator('.archive-menu summary').click();}
    if(file==='daily.html'){
     await page.locator('#dayPicker').fill('2026-10-01');await page.locator('#dayPicker').dispatchEvent('change');
     assert.equal(await page.locator('#dailyList article').count(),2);assert(!((await page.locator('#dailyList').innerText()).includes('DM PRIVATE')));assert(!((await page.locator('#dailyList').innerText()).includes('TIKTOK LEGACY')));
     assert.equal(await page.locator('#dayPlatform option').count(),6);
     await page.locator('#dayPlatform').selectOption('Weverse Reply');assert.equal(await page.locator('#dailyList article').count(),1);await page.locator('#dayPlatform').selectOption('全部平台');
     assert(await page.locator('#calendar button').filter({hasText:/^2$/}).evaluate(el=>el.classList.contains('has')));
-    await page.locator('.slideActions button').last().click();assert.equal(await page.locator('.slideActions span').textContent(),'2 / 2');
+    await page.locator('#dailyList .slideActions button').last().click();assert.equal(await page.locator('#dailyList .slideActions span').textContent(),'2 / 2');
     await page.screenshot({path:path.join(shots,'daily-'+width+'.png'),fullPage:true});
     assert.equal(await page.locator('#tabs a.journey-nav').count(),0);assert(await page.locator('#manageBtn').isHidden());assert.equal(await page.locator('input[type=file]:visible').count(),0);
     await page.goto(base+'/daily.html?tab=dm&month=2026-10');await page.waitForLoadState('networkidle');assert(await page.locator('#dmJourneyLink').isVisible());assert.equal(await page.locator('#dmJourneyLink').getAttribute('href'),'journey.html?month=2026-10');await page.locator('#dmMonth').fill('2026-11');await page.locator('#dmMonth').dispatchEvent('change');assert.equal(await page.locator('#dmJourneyLink').getAttribute('href'),'journey.html?month=2026-11');

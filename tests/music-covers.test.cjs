@@ -33,7 +33,7 @@ let png;
  await p.unroute(url);await box.getByText('重试',{exact:true}).click();
  await p.waitForFunction(()=>![...document.querySelectorAll('.music-cover-status')].some(e=>e.textContent.includes('封面加载失败')));
  await p.locator('#musicSearch').fill('Michael Jackson');assert.equal(await p.locator('#musicList .music-track').count(),1);
- for(const tab of ['daily','monthly','dm','photos','yearly']){await p.locator(`#tabs button[data-tab="${tab}"]`).click();assert(await p.locator('#'+tab).isVisible());}
+ for(const tab of ['daily','monthly','dm','photos','yearly']){await p.locator('#tabs summary').click();await p.locator(`#tabs button[data-tab="${tab}"]`).click();assert(await p.locator('#'+tab).isVisible());}
  assert.deepEqual(errors,[]);
  console.log('PASS 115-row pagination; 57 database + 53 approved fallback covers; database URLs unchanged; 5 missing notices; actual img error/retry; search and five public tabs.');
 }finally{await b?.close()}})().catch(e=>{console.error(e);process.exitCode=1});

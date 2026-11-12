@@ -1,7 +1,7 @@
 'use strict';
 (() => {
 const ADMIN='0c40000a-9f2c-46dc-8ba7-a0b016e6988e',BASE='https://shwilnzlpychjoasvqtg.supabase.co',TABLE='archive_records',BUCKET='archive-images';
-const definitions={thoughts:{title:'THOUGHTS',subtitle:'想法 / 采访 / 公开文字',parent:'self',categories:['采访','Behind','直播','其他公开内容']},fragments:{title:'FRAGMENTS',subtitle:'故事 / 习惯 / 喜好 / 人物细节',parent:'self',categories:['小故事','习惯','喜好','人物细节']},stage:{title:'STAGE',subtitle:'舞台与直拍',parent:'work',categories:['个人直拍','BOYNEXTDOOR 团体舞台','个人及队外合作舞台']},shorts:{title:'SHORT VIDEOS',subtitle:'SOLO TIKTOK / SPECIAL TIKTOK',parent:'work',categories:['单人 TikTok','Special TikTok']}};
+const definitions={thoughts:{title:'想法',subtitle:'想法 / 采访 / 公开文字',parent:'self',categories:['采访','Behind','直播','其他公开内容']},fragments:{title:'片段',subtitle:'故事 / 习惯 / 喜好 / 人物细节',parent:'self',categories:['小故事','习惯','喜好','人物细节']},stage:{title:'舞台',subtitle:'舞台与直拍',parent:'work',categories:['个人直拍','BOYNEXTDOOR 团体舞台','个人及队外合作舞台']},shorts:{title:'短视频',subtitle:'SOLO TIKTOK / SPECIAL TIKTOK',parent:'work',categories:['单人 TikTok','Special TikTok']}};
 const kind=document.body.dataset.module,cfg=definitions[kind],$=id=>document.getElementById(id),make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const key='taesan-archive-drafts-v1-'+kind;
 let client,admin=false,cloud=[],drafts=[],images=[],busy=false,loadToken=0,visible=24,available=false,loadFailed=false,legacy=[];

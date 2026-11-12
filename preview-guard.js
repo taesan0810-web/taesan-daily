@@ -19,7 +19,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const notice = document.createElement('div');
     notice.className = 'preview-notice';
-    notice.textContent = 'REVIEW PREVIEW / 生产数据只读';
+    notice.textContent = '只读预览';
     document.body.prepend(notice);
   });
 })();
