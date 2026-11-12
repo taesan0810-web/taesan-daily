@@ -437,6 +437,15 @@ textarea {
   background: #fff !important;
   color: var(--ink) !important;
 }
+.wrap input,
+.wrap select,
+.wrap textarea,
+.archive-wrap input,
+.archive-wrap select,
+.archive-wrap textarea,
+dialog input {
+  font-size: 16px;
+}
 input:focus,
 select:focus,
 textarea:focus {
