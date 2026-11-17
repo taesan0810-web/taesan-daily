@@ -25,7 +25,7 @@ function renderImages(){const box=$('uploadedImages');box.replaceChildren();imag
 async function signed(img,path){try{const {data,error}=await client.storage.from(BUCKET).createSignedUrl(path,300);if(error)throw error;img.src=data.signedUrl;}catch{img.alt='图片暂时无法读取';}}
 function draw(row,local=false){
  const article=make('article',undefined,'archive-record');article.append(make('div',(row.public_date||'日期待补充')+' / '+row.category+(local?' / 本机草稿':row.published?'':' / 云端草稿'),'meta'));
- if(safe(row.cover_url)){const img=make('img');img.src=safe(row.cover_url);img.alt=row.title+' 封面';img.loading='lazy';img.className='cover';article.append(img);}
+ if(safe(row.cover_url)){const img=make('img');img.src=safe(row.cover_url);img.alt=row.title+' 封面';img.loading='lazy';img.className='cover';if(kind==='stage'&&safe(row.source_url)){const link=make('a');link.href=safe(row.source_url);link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','观看 '+row.title);link.append(img);article.append(link);}else article.append(img);}
  article.append(make('h2',row.title));if(row.event_name)article.append(make('p',row.event_name,'meta'));if(row.collaborators)article.append(make('p','合作 / '+row.collaborators,'meta'));if(row.content_zh)article.append(make('p',row.content_zh));if(row.original_ko){const ko=make('blockquote',row.original_ko);ko.lang='ko';article.append(ko);}
  const photos=make('div',undefined,'photos');for(const u of row.image_urls||[])if(safe(u)){const img=make('img');img.src=safe(u);img.alt=row.title;img.loading='lazy';photos.append(img);}for(const p of row.images||[]){const img=make('img');img.alt=row.title;img.loading='lazy';photos.append(img);if(client)void signed(img,p);}if(photos.childElementCount)article.append(photos);
  const tags=make('div',undefined,'archive-tags');for(const t of row.tags||[])tags.append(make('span','#'+t));article.append(tags);
@@ -41,10 +41,22 @@ function render(){
 }
 async function load(){const token=++loadToken;note('正在读取档案…');if(!client){render();return;}try{let all=[];for(let start=0;;start+=100){let q=client.from(TABLE).select('*').eq('kind',kind);if(!admin)q=q.eq('published',true);const {data,error}=await q.order('public_date',{ascending:false,nullsFirst:false}).order('id').range(start,start+99);if(error)throw error;all.push(...data);if(data.length<100)break;}if(token!==loadToken)return;cloud=all;available=true;loadFailed=false;}catch(e){if(token!==loadToken)return;available=false;loadFailed=!['PGRST205','42P01'].includes(e.code);cloud=[];}render();}
 async function auth(){if(!client)return;const {data,error}=await client.auth.getUser();admin=!!window.TAESAN_WORKSPACE&&!error&&data.user?.id===ADMIN;$('logout').hidden=!admin;$('saveCloud').disabled=!!window.TAESAN_PREVIEW||!admin;$('files').disabled=!!window.TAESAN_PREVIEW||!admin;$('editorPanel').hidden=!window.TAESAN_WORKSPACE||(!admin&&!window.TAESAN_PREVIEW);await load();}
+function stageCategories(){
+ if(kind!=='stage'||window.TAESAN_WORKSPACE)return;
+ const nav=make('nav',undefined,'stage-categories');nav.setAttribute('aria-label','舞台分类');
+ const labels=['全部','个人直拍','团体舞台','合作舞台'];
+ const values=['',...cfg.categories];
+ function active(){for(const button of nav.querySelectorAll('button'))button.setAttribute('aria-pressed',String(button.dataset.category===$('category').value));}
+ values.forEach((value,index)=>{const button=action(labels[index],()=>{$('category').value=value;visible=24;render();active();const url=new URL(location.href);if(value)url.searchParams.set('category',value);else url.searchParams.delete('category');history.replaceState(null,'',url);});button.dataset.category=value;nav.append(button);});
+ const requested=new URLSearchParams(location.search).get('category');if(values.includes(requested))$('category').value=requested;
+ $('category').hidden=true;$('category').closest('.archive-toolbar').before(nav);active();
+ $('sort').options[0].textContent='发布日期 · 新到旧';$('sort').options[1].textContent='发布日期 · 旧到新';
+}
 async function init(){
  document.title=cfg.title+' / TAESAN PERSONAL ARCHIVE';$('moduleTitle').textContent=cfg.title;$('moduleSubtitle').textContent=cfg.subtitle;$('parent').textContent='← '+cfg.parent.toUpperCase();$('parent').href=cfg.parent+'.html';
  const video=['stage','shorts'].includes(kind);$('koreanLabel').hidden=video;$('eventLabel').hidden=kind!=='stage';$('collaboratorsLabel').hidden=kind!=='shorts';$('content').required=!video;
  for(const id of ['category','editCategory']){if(id==='category'){const o=make('option','全部分类');o.value='';$(id).append(o);}for(const c of cfg.categories){const o=make('option',c);o.value=c;$(id).append(o);}}
+ stageCategories();
  if(window.TAESAN_WORKSPACE)readDrafts();reset();$('editorPanel').hidden=!window.TAESAN_WORKSPACE||!window.TAESAN_PREVIEW;$('saveCloud').disabled=true;$('files').disabled=true;
  $('manage').onclick=()=>{if(window.TAESAN_PREVIEW||admin){$('editorPanel').hidden=false;$('editorPanel').scrollIntoView({behavior:'smooth'});}else $('login').showModal();};
  $('closeLogin').onclick=()=>$('login').close();$('newRecord').onclick=reset;$('cancel').onclick=reset;
